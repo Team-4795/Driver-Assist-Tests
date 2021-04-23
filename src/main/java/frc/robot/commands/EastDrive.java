@@ -7,7 +7,6 @@ package frc.robot.commands;
 import frc.robot.subsystems.Drivetrain;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import java.util.function.Supplier;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class EastDrive extends CommandBase {
   private final Drivetrain m_drivetrain;
@@ -48,8 +47,6 @@ public class EastDrive extends CommandBase {
     double throttle = m_throttle.get();
     boolean reverse = m_reverse.get();
     double angle = m_drivetrain.getGyroAngleZ();
-
-    SmartDashboard.putNumber("Reverse", forward);
 
     throttle = (1.0 - throttle * 0.75);
 
