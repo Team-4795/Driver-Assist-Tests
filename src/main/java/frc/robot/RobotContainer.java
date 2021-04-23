@@ -61,6 +61,18 @@ public class RobotContainer {
     return m_chooser.getSelected();
   }
 
+  protected double applyDeadband(double value, double deadband) {
+    if (Math.abs(value) > deadband) {
+      if (value > 0.0) {
+        return (value - deadband) / (1.0 - deadband);
+      } else {
+        return (value + deadband) / (1.0 - deadband);
+      }
+    } else {
+      return 0.0;
+    }
+  }
+
   /**
    * Use this to pass the teleop command to the main {@link Robot} class.
    *
@@ -69,9 +81,9 @@ public class RobotContainer {
   public Command getDriveCommand() {
     return new EastDrive(
       m_drivetrain,
-      () -> -m_controller.getRawAxis(1),
-      () -> m_controller.getRawAxis(2),
-      () -> m_controller.getRawAxis(3)
-    );
+      () -> applyDeadband(-m_controller.getRawAxis(1), 0.05),
+      () -> applyDeadband(m_controller.getRawAxis(3), 0.05),
+      () -> applyDeadband((m_controller.getRawAxis(5) + 1) / 2, 0.05),
+      () -> m_controller.getRawButtonPressed(6));
   }
 }

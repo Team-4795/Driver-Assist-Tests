@@ -7,24 +7,29 @@ package frc.robot.commands;
 import frc.robot.subsystems.Drivetrain;
 import edu.wpi.first.wpilibj2.command.CommandBase;
 import java.util.function.Supplier;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class EastDrive extends CommandBase {
   private final Drivetrain m_drivetrain;
   private final Supplier<Double> m_xaxisSpeedSupplier;
   private final Supplier<Double> m_zaxisRotateSupplier;
   private final Supplier<Double> m_throttle;
+  private final Supplier<Boolean> m_reverse;
   private long lastSpeedPress;
   private double targetDirection;
+  private double forward = 1.0;
 
   public EastDrive(
       Drivetrain drivetrain,
       Supplier<Double> xaxisSpeedSupplier,
       Supplier<Double> zaxisRotateSupplier,
-      Supplier<Double> throttle) {
+      Supplier<Double> throttle,
+      Supplier<Boolean> reverse) {
     m_drivetrain = drivetrain;
     m_xaxisSpeedSupplier = xaxisSpeedSupplier;
     m_zaxisRotateSupplier = zaxisRotateSupplier;
     m_throttle = throttle;
+    m_reverse = reverse;
     addRequirements(drivetrain);
   }
 
@@ -41,17 +46,24 @@ public class EastDrive extends CommandBase {
     double speed = m_xaxisSpeedSupplier.get();
     double rotation = m_zaxisRotateSupplier.get();
     double throttle = m_throttle.get();
+    boolean reverse = m_reverse.get();
     double angle = m_drivetrain.getGyroAngleZ();
 
+    SmartDashboard.putNumber("Reverse", forward);
+
     throttle = (1.0 - throttle * 0.75);
+
+    if(reverse) forward *= -1.0;
+
+    speed *= forward;
 
     if(Math.abs(speed) > 0) lastSpeedPress = System.currentTimeMillis();
     if(Math.abs(rotation) > 0) targetDirection = angle;
 
-    double adjust = targetDirection - angle;
+    double adjust = 0;//targetDirection - angle;
 
-    if(adjust > 1) {
-      adjust = Math.signum(adjust) * 0.1;
+    if(Math.abs(adjust) > 1.75) {
+      adjust = Math.signum(adjust) * 0.06;
     } else {
       adjust = 0.0;
     }
@@ -59,9 +71,9 @@ public class EastDrive extends CommandBase {
     speed *= throttle;
     
     if(speed == 0) {
-      double rampMultiplier = Math.min(Math.max((System.currentTimeMillis() - lastSpeedPress) / 500.0, 0.25), 1.0);
-      rotation *= throttle * rampMultiplier;
-      m_drivetrain.arcadeDrive(speed, rotation);
+      double transitionRamp = Math.min(Math.max((System.currentTimeMillis() - lastSpeedPress) / 500.0, 0.5), 1.0);
+      rotation *= Math.max(throttle, 0.4) * transitionRamp * 0.6;
+      m_drivetrain.curvatureDrive(speed, rotation, true);
     } else {
       m_drivetrain.curvatureDrive(speed, rotation + adjust, false);
     }
